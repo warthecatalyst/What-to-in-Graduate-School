@@ -555,7 +555,6 @@ java.lang.reflect中的 Proxy类
 (3)使用Proxy类创建接口代理对象
 
 ### AOP（术语)
-1、连接点
 ```Java
 class User{
     add();
@@ -568,13 +567,155 @@ class User{
 }
 
 ```
+
+1、连接点
+类里面哪些方法可以被增强，这些方法被称为连接点
+
 2、切入点
+实际被真正增强的方法，称为切入点
 
 3、通知（增强）
+(1)实际增强的逻辑部分称为通知(增强)
+(2)通知有多种类型
+*前置通知
+*后置通知
+*环绕通知   
+*异常通知 类似于catch
+*最终通知 类似于finally
 
 4、切面
+是动作
+（1）把通知应用到切入点过程
 
-### Spring经典面试题
+### AOP操作(准备)
+**1、Spring框架一般基于AspectJ实现AOP操作**
+（1）什么是AspectJ
+*AspectJ不是Spring组成部分，独立AOP框架，一般把AspectJ和Spring框架一起使用，进行AOP操作
+
+**2、基于AspectJ实现AOP操作**
+(1)基于XML配置文件实现
+(2)基于注解方式实现(使用)
+
+**3、在项目工程中引入AOP相关依赖**
+
+**4、切入点表达式**
+（1）切入点表达式作用：知道对哪个类里面的哪个方法进行增强
+（2）语法结构：
+execution([权限修饰符][返回类型][类的全路径][方法名称]\([参数列表]))
+
+举例1:对com.atguigu.dao.BookDao类里面的add进行增强
+execution(*com.atguigu.dao.BookDao.add(..))
+
+举例2:对com.atguigu.dao.BookDao类里面的所有方法进行增强
+execution(*com.atguigu.dao.BookDao.*(..))
+
+举例3:对com.atguigu.dao包里面所有类，类中的所有方法进行增强
+execution(*com.atguigu.dao.*.*(..))
+
+### AOP操作(AspectJ注解)
+1、创建类，在类中定义方法
+```Java
+public class User {
+    public void add(){
+        System.out.println("add.......");
+    }
+}
+```
+2、创建增强类(编写增强的逻辑)
+（1）在增强的类中，创建方法，让不同方法代表不同的通知类型
+```Java
+//增强的类
+public class UserProxy {
+    public void before(){
+        System.out.println("add......");
+    }
+}
+```
+3、进行通知的配置
+(1)在Spring的配置文件中，开启注解扫描
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context  http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop.xsd">
+        
+      <!-- 开启注解扫描 -->
+      <context:component-scan base-package="com.atguigu.spring5.aopanno"></context:component-scan>
+</beans>
+```
+(2)使用注解创建User和UserProxy对象
+(3)在增强类上面添加注解@Aspect
+(4)在spring配置文件中生成代理对象
+
+4、配置不同类型的通知
+（1）在增强类的里面，在作为通知方法上面添加通知类型注解，使用切入点表达式配置。
+
+5、公共（相同）切入点抽取
+重用切入点定义
+
+6、有多个增强类对同一个方法进行增强，设置增强类优先级
+（1）在增强类上面添加注解@Order(数字类型值)，数字类型值越小优先级越高
+
+7、完全使用注解开发
+(1)创建配置类，不需要创建XML配置文件
+```Java
+@Configuration
+@ComponentScan(basePackages = {"com.atguigu"})
+@EnableAspectJAutoProxy(proxyTargetClass = true)
+public class ConfigAop {
+    
+}
+```
+
+### AOP操作(AspectJ配置文件)
+1、创建两个类，增强类和被增强类，创建方法
+
+2、在Spring配置文件中创建两个类对象
+
+3、在Spring配置文件中配置切入点
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context  http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop.xsd">
+    <!--创建两个类的对象-->
+    <bean id="book" class = "com.atguigu.spring5.aopxml.Book"></bean>
+    <bean id="bookProxy" class = "com.atguigu.spring5.aopxml.BookProxy"></bean>
+
+    <!--配置AOP的增强-->
+    <aop:config>
+        <!--切入点配置 对Book中的buy方法进行增强-->
+        <aop:pointcut id="p" expression="execution(* com.atguigu.spring5.aopxml.Book.buy())"/>
+
+        <!--配置切面-->
+        <aop:aspect ref="bookProxy">
+            <!--增强作用在具体的方法上-->
+            <aop:before method="before" pointcut-ref="p"></aop:before>
+        </aop:aspect>
+    </aop:config>
+</beans>
+```
+
+### JDBCTemplate(概念与准备)
+1、什么是JDBCTemplate  
+(1) Spring框架对JDBC进行封装，使用JDBCTemplate方便对数据库进行操作
+
+2、准备工作
+(1)添加依赖
+(2)配置连接池
+(3)配置JDBCTemplate对象
+(4)创建service类，创建dao类，在dao中注入jdbcTemplate对象
+
+
+## Spring经典面试题
 1、Spring的两个主要特性：IOC和AOP
 IOC代表的就是控制反转，将对象的创建、销毁等交给Spring实现
 AOP代表的是面向切面编程，将一些横向的东西，例如日志、鉴权、缓存、错误处理等交给切面实现。
@@ -586,7 +727,7 @@ AOP代表的是面向切面编程，将一些横向的东西，例如日志、�
 
 ## 深入理解Java虚拟机
 ### 2、Java内存区域与内存溢出异常
-#### 3、运行时数据区域
+#### 2.1 运行时数据区域
 运行时数据区域主要分为5个部分，方法区、堆区、虚拟机栈、本地方法栈、程序计数器。其中方法区、堆区是由所有线程共享的内存区域，虚拟机栈、本地方法栈和程序计数器为线程私有的。
 
 **程序计数器**
@@ -610,4 +751,48 @@ Java世界中“几乎所有对象”都会在此分配内存。Java堆是垃圾
 运行时常量池是方法区的一部分。Class文件中除了有类的版本、字段、方法、接口等描述信息外，还有一项信息是常量池表(Constant Pool Table)，用于存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后存放到方法区的运行时常量池中。
 
 **直接内存**
-在JDK1.4中新加入了NIO类，引入了一种基于通道与缓冲区的I/O方式，它可以使用Native函数库直接分配堆外内存，然后通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用进行操作。避免了在Java堆和Native堆中来回复制数据
+在JDK1.4中新加入了NIO类，引入了一种基于通道与缓冲区的I/O方式，它可以使用Native函数库直接分配堆外内存，然后通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用进行操作。避免了在Java堆和Native堆中来回复制数据。
+
+#### 2.3 虚拟机对象探秘
+探讨一下HotSpot虚拟机在Java堆中对象分配、布局和访问的全过程
+
+**对象的创建**
+当Java虚拟机遇到一条字节码new指令
+
+### 3、垃圾回收器和内存分配策略
+#### 3.2 对象已死
+在堆中存放着Java世界中几乎所有的对象实例，垃圾回收器在对堆进行回收前，第一件事就是要确定这些对象之中哪些还存活，哪些已经死去（不再被使用）。
+**引用计数算法**
+引用计数算法无法解决对象之间循环引用的问题。
+
+**可达性分析算法**
+该算法的基本思路是通过一系列称为GC Roots的根对象作为起始节点集，从这些节点开始根据引用关系向下搜索，搜索过程中所走过的路径被称为“引用链”(Reference Chain)，如果某个对象到GC Roots之间没有任何引用链相连，或者用图论来说就是从GC Roots到某个对象不可达时，则证明该对象是不可能再被使用了。
+
+GC Roots对象包含以下几种：
+1、在虚拟机栈中引用的对象，例如当前正在运行的方法所使用的到的参数、局部变量、临时变量等。
+2、在方法区中类静态属性引用的对象，例如Java类的引用类型静态变量
+3、在方法区中常量引用的对象，例如字符串常量池中的引用
+4、在本地方法栈中JNI引用的对象
+5、Java虚拟机内部的引用，例如基本数据类型对应的Class对象，常驻的异常对象，系统的类加载器
+6、所有被同步锁(synchronized关键字)持有的对象
+7、反应Java虚拟机内部情况的JMXBean、JVMTI中注册的回调，本地代码缓存等。
+
+**再谈引用**
+JDK1.2之后，Java对引用的概念进行了扩充，将引用分为强引用、软引用、弱引用与虚引用。
+四种引用的强度依次减弱。
+- 强引用是最传统的“引用定义”，是指在代码中普遍存在的引用赋值，也就类似于Object obj = new Object()的这种引用关系。无论在任何情况下，只要强引用关系仍然存在，垃圾收集器就永远不会回收掉被引用的对象。
+- 软引用描述一些还有用但非必须的对象。SoftReference可以存活到二次回收。
+- 弱引用也是用于描述非必须的对象，但强度比软引用更弱，只会存活到下一次回收
+- 虚引用是最弱的，不会对对象的生存时间构成影响。
+
+**生存还是死亡**
+如果一个对象覆盖finalize()方法且在回收之前未调用，则会放到F-Queue队列中存活到调用后为止。但该语法不推荐使用。
+
+#### 3.3垃圾回收算法
+**分代收集理论**
+强分代假说：绝大多数对象都是朝生夕灭的
+弱分代假说：熬过越多次垃圾收集过程的对象就越难以消亡
+
+这两个分代假说共同奠定了多款常用的垃圾收集器的一致设计原则：收集器应该将Java堆划分出不同的区域，然后将回收对象根据其年龄（年龄即熬过垃圾收集过程的次数）分配到不同的区域中存储。
+
+在Java堆划分了不同的区域之后，垃圾收集器才可以每次只回收其中某一个或者某些部分的区域——因而才有了"Minor GC","Major GC","Full GC"等回收类型的划分。并发展出“标记-复制算法”，“标记-清除算法”和“标记-整理算法”。

@@ -36,6 +36,42 @@ Golang 是一门面向对象的编程语言，但是它比传统的面向对象�
 
 因此，虽然 Golang 不像 Java 或 C# 那样强调面向对象编程，但是它仍然是一门支持面向对象编程的语言。
 
-4、
-
 ## Go语言经典面试问题
+1、golang中切片容量增长
+在golang1.18版本后，扩容策略变为：当原slice容量(oldcap)小于256的时候，新slice(newcap)容量为原来的2倍；原slice容量超过256，新slice容量newcap = oldcap+(oldcap+3*256)/4
+
+2、下面的例子显示了，在函数中改变一个map在调用方的map也会跟着改变
+在函数中修改slice的值调用方的slice也会改变，但append则不一定，因为可能发生扩容
+```Go
+import "fmt"
+
+func main() {
+	myMap := map[string]interface{}{}
+	myMap["abc"] = 1
+	fmt.Println(myMap)
+	changeMap(myMap)
+	fmt.Println(myMap)
+
+	intSlice := []int{1, 2, 3, 4}
+	fmt.Println(intSlice)
+	changeSlice(intSlice)
+	fmt.Println(intSlice)
+	appendSlice(intSlice)
+	fmt.Println(intSlice)
+}
+
+//在函数中改变一个map在主函数中也会改变
+func changeMap(mtc map[string]interface{}) {
+	mtc["efg"] = 2
+}
+
+func changeSlice(intSlice []int) {
+	for i := range intSlice {
+		intSlice[i] = 4
+	}
+}
+
+func appendSlice(intSlice []int) {
+	intSlice = append(intSlice, 0)
+}
+```
