@@ -75,3 +75,12 @@ func appendSlice(intSlice []int) {
 	intSlice = append(intSlice, 0)
 }
 ```
+
+3、Golang的channel是如何实现并发安全的
+Go 语言中的 channel 通过使用并发原语实现并发安全。在底层，channel 是通过使用同步原语（mutexes、condition variables）和原子操作（atomic operations）来实现的，并且遵循 happens-before 原则。
+
+具体来说，channel 有两个基本操作：发送和接收。在发送过程中，channel 首先会检查是否有其他 goroutine 正在接收 channel 中的值，如果有，则将值直接传递给接收方，并激活接收方的 goroutine。如果没有，则将值放入一个队列中，并等待其他 goroutine 执行接收操作。在接收过程中，channel 会检查是否有其他 goroutine 正在发送值，如果有，则直接获取该值并返回。如果没有，则从队列中取出一个值，并将其传递给发送方，然后激活发送方的 goroutine。
+
+这些操作都是原子的，因此 channel 可以安全地在多个 goroutine 之间共享。此外，Go 语言中的 channel 还具有先进先出的特性，保证了多个 goroutine 在使用同一个 channel 时不会出现竞争条件的问题。
+
+需要注意的是，虽然 channel 是并发安全的，但是如果使用不当，仍然可能会出现一些问题，如死锁、阻塞等。因此，在使用 channel 时应该注意它们的容量、发送和接收的时机，以及它们的使用方式。
