@@ -796,3 +796,63 @@ JDK1.2之后，Java对引用的概念进行了扩充，将引用分为强引用�
 这两个分代假说共同奠定了多款常用的垃圾收集器的一致设计原则：收集器应该将Java堆划分出不同的区域，然后将回收对象根据其年龄（年龄即熬过垃圾收集过程的次数）分配到不同的区域中存储。
 
 在Java堆划分了不同的区域之后，垃圾收集器才可以每次只回收其中某一个或者某些部分的区域——因而才有了"Minor GC","Major GC","Full GC"等回收类型的划分。并发展出“标记-复制算法”，“标记-清除算法”和“标记-整理算法”。
+
+## Java经典面试题
+### 用Java语言实现一个单例模式
+```Java
+//饿汉式单例模式
+public class Singleton {
+    private static Singleton instance = new Singleton();
+
+    private Singleton() {}
+
+    public static Singleton getInstance() {
+        return instance;
+    }
+}
+
+//懒汉式单例模式
+public class Singleton {
+    private static Singleton instance;
+    
+    private Singleton() {}
+
+    public static synchronized Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+
+//双重检查锁单例模式
+public class Singleton {
+    private static volatile Singleton instance;
+
+    private Singleton() {}
+
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized(Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+//静态内部类单例模式
+public class Singleton {
+    private Singleton() {}
+
+    public static Singleton getInstance() {
+        return Holder.instance;
+    }
+
+    private static class Holder {
+        private static final Singleton instance = new Singleton();
+    }
+}
+```

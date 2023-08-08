@@ -97,7 +97,7 @@ pmap命令
 ps -u war |  awk '/av_/ {print "kill -9 " $1}' | sh
 
 # 将用户war下所有进程名中包含HOST的进程终止:
-PS -fe｜ grep war| grep HOST | awk '{print $2}' | xargs kill -9
+PS -ef｜ grep war| grep HOST | awk '{print $2}' | xargs kill -9
 ```
 
 
