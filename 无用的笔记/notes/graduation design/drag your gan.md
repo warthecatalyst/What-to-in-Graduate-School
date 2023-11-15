@@ -28,4 +28,4 @@ $$
 ![point tracking](./images/dragGAN-thoughts.PNG)
 
 ## 为什么用Drag3D用DragGAN+GET3D
-其实DragGAN本身就是drag一个GAN生成的图像而不是一个给定的输入图片。DragGAN的输入就是通过GAN生成的图片I和隐码w，然后通过每一轮的运动监督和点跟踪慢慢地把隐码w变成w'。Drag3D其实本质上drag的是get3D的DMTET可微四面体。
+其实DragGAN本身就是drag一个GAN生成的图像而不是一个给定的输入图片。DragGAN的输入就是通过GAN生成的图片I和隐码w，然后通过每一轮的运动监督和点跟踪慢慢地把隐码w变成w'。Drag3D的大致步骤是差不多的，只不过他track的point是3D点，每一轮修改的latent code有mesh和geometry。然后通过DMTet从随机顶点生成mesh的顶点verts和面片faces。
