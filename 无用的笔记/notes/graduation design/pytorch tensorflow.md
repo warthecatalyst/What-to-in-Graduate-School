@@ -1,0 +1,12 @@
+# Pytorch和Tensorflow的面试题
+## tensorflow和pytorch的区别
+首先，让我们从两者的底层原理开始。
+
+PyTorch：PyTorch是一个基于Python的科学计算包，其底层基于动态图编程，使得开发过程更加直观和灵活。在PyTorch中，张量的计算图在运行前被静态定义，然后通过调用session来执行图。这种设计使得调试变得困难，因为运行错误可能需要重新构建图并重新运行整个过程。
+TensorFlow：TensorFlow是谷歌开源的一个强大的机器学习平台，底层基于静态图编程。TensorFlow中的计算图在运行前被定义，然后通过调用会话（session）来执行图。这种设计使得TensorFlow在执行效率上具有优势，因为所有的计算图都是在定义后预先计算的。然而，这也导致了调试过程相对复杂，因为运行错误可能需要重新构建图并重新运行整个过程。
+
+接下来，让我们看看PyTorch和TensorFlow之间的区别：
+实现方式：PyTorch使用动态图编程，TensorFlow使用静态图编程。动态图编程让PyTorch的代码更易于开发和调试，而静态图编程使得TensorFlow在执行效率上具有优势。
+可视化：PyTorch没有类似TensorBoard的工具，但可以通过导入TensorBoardx或者matplotlib之类的工具包用于数据可视化。TensorBoard是TensorFlow的一个强大功能，可以清晰地显示计算图、网络架构等。
+图的定义：在PyTorch中，图的定义是动态的，可以随时定义、更改和执行节点。而在TensorFlow中，图的定义是静态的，需要在运行前定义好所有的计算节点。
+总的来说，PyTorch和TensorFlow各有优势。PyTorch更适合研究和快速原型开发，而TensorFlow则更适合生产环境和大规模部署。在选择使用哪一个平台时，需要根据您的具体需求来决定。

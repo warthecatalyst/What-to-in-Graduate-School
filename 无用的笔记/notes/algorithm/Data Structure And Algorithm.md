@@ -125,3 +125,5 @@ And finally, we check if $left==0$. If so, return 1, else we check whether A[lef
 So similar to the previous question, to define if $A[mid]+C[mid] == d$, return mid+1. Or else, if $A[mid]+C[mid] < d, left = mid+1$,else $right = mid$.
 
 And finally, we check if $left==0$. If so, return 1, else we check whether A[left-1]+C[left-1] and A[left]+C[left] is closer to d.
+
+## 优先队列
