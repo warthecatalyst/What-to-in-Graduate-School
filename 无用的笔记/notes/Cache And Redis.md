@@ -17,3 +17,94 @@
 
 随机设置额外过期时间
 
+## Redis面试题汇总
+### 认识redis
+**什么是redis**
+Redis是一种基于内存的数据库，对数据的读写操作都是在内存中完成，因此读写速度非常快，常用于缓存，消息队列、分布式锁等场景。
+
+**redis一般的应用场景**
+redis一般可以作为数据库的缓存。为什么用Redis作为数据库的缓存呢？
+1、Redis具备高性能性：redis是直接的内存读写，所以速度很快。
+2、Redis具备高并发性：单台设备的 Redis 的 QPS（Query Per Second，每秒钟处理完请求的次数） 是 MySQL 的 10 倍，Redis 单机的 QPS 能轻松破 10w，而 MySQL 单机的 QPS 很难破 1w。所以，直接访问 Redis 能够承受的请求是远远大于直接访问 MySQL 的，所以我们可以考虑把数据库中的热点数据转移到缓存中去，这样用户的一部分请求会直接到缓存这里而不用经过数据库。
+
+### redis的数据结构
+**String**
+String 类型的底层的数据结构实现主要是 SDS（简单动态字符串）。 SDS 和我们认识的 C 字符串不太一样，之所以没有使用 C 语言的字符串表示，因为 SDS 相比于 C 的原生字符串：
+- SDS 不仅可以保存文本数据，还可以保存二进制数据。因为 SDS 使用 len 属性的值而不是空字符来判断字符串是否结束，并且 SDS 的所有 API 都会以处理二进制的方式来处理 SDS 存放在 buf[] 数组里的数据。所以 - SDS 不光能存放文本数据，而且能保存图片、音频、视频、压缩文件这样的二进制数据。
+SDS 获取字符串长度的时间复杂度是 O(1)。因为 C 语言的字符串并不记录自身长度，所以获取长度的复杂度为 O(n)；而 SDS 结构里用 len 属性记录了字符串长度，所以复杂度为 O(1)。
+- Redis 的 SDS API 是安全的，拼接字符串不会造成缓冲区溢出。因为 SDS 在拼接字符串之前会检查 SDS 空间是否满足要求，如果空间不够会自动扩容，所以不会导致缓冲区溢出的问题。 
+
+**List**
+List 类型的底层数据结构是由双向链表或压缩列表实现的：
+
+如果列表的元素个数小于 512 个（默认值，可由 list-max-ziplist-entries 配置），列表每个元素的值都小于 64 字节（默认值，可由 list-max-ziplist-value 配置），Redis 会使用压缩列表作为 List 类型的底层数据结构；
+如果列表的元素不满足上面的条件，Redis 会使用双向链表作为 List 类型的底层数据结构；
+但是在Redis 3.2版本之后, List数据类型底层数据结构就只由quicklist实现了，替代了双向链表和压缩列表。
+
+**什么是quickList**
+quicklist 的结构体跟链表的结构体类似，都包含了表头和表尾，区别在于 quicklist 的节点是 quicklistNode。
+```C
+typedef struct quicklist {
+    //quicklist的链表头
+    quicklistNode *head;      //quicklist的链表头
+    //quicklist的链表尾
+    quicklistNode *tail; 
+    //所有压缩列表中的总元素个数
+    unsigned long count;
+    //quicklistNodes的个数
+    unsigned long len;       
+    ...
+} quicklist;
+```
+
+接下来看看，quicklistNode 的结构定义：
+```C
+typedef struct quicklistNode {
+    //前一个quicklistNode
+    struct quicklistNode *prev;     //前一个quicklistNode
+    //下一个quicklistNode
+    struct quicklistNode *next;     //后一个quicklistNode
+    //quicklistNode指向的压缩列表
+    unsigned char *zl;              
+    //压缩列表的的字节大小
+    unsigned int sz;                
+    //压缩列表的元素个数
+    unsigned int count : 16;        //ziplist中的元素个数 
+    ....
+} quicklistNode;
+```
+可以看到，quicklistNode 结构体里包含了前一个节点和下一个节点指针，这样每个 quicklistNode 形成了一个双向链表。但是链表节点的元素不再是单纯保存元素值，而是保存了一个压缩列表，所以 quicklistNode 结构体里有个指向压缩列表的指针 *zl。
+
+在向 quicklist 添加一个元素的时候，不会像普通的链表那样，直接新建一个链表节点。而是会检查插入位置的压缩列表是否能容纳该元素，如果能容纳就直接保存到 quicklistNode 结构里的压缩列表，如果不能容纳，才会新建一个新的 quicklistNode 结构。
+
+quicklist 会控制 quicklistNode 结构里的压缩列表的大小或者元素个数，来规避潜在的连锁更新的风险，但是这并没有完全解决连锁更新的问题。
+
+**Hash类型的内部实现**
+Hash 类型的底层数据结构是由压缩列表或哈希表实现的：
+
+如果哈希类型元素个数小于 512 个（默认值，可由 hash-max-ziplist-entries 配置），所有值小于 64 字节（默认值，可由 hash-max-ziplist-value 配置）的话，Redis 会使用压缩列表作为 Hash 类型的底层数据结构；
+如果哈希类型元素不满足上面条件，Redis会使用哈希表作为Hash类型的底层数据结构。
+在Redis 7.0 中，压缩列表数据结构已经废弃了，交由 listpack 数据结构来实现了。
+
+**Set类型的内部实现**
+Set 类型的底层数据结构是由哈希表或整数集合实现的：
+如果集合中的元素都是整数且元素个数小于512（默认值，set-maxintset-entries配置）个，Redis会使用整数集合作为Set类型的底层数据结构；
+如果集合中的元素不满足上面条件，则Redis使用哈希表作为Set类型的底层数据结构。
+
+**ZSet类型的内部实现**
+Zset 类型的底层数据结构是由压缩列表或跳表实现的：
+
+如果有序集合的元素个数小于128个，并且每个元素的值小于64字节时，Redis会使用压缩列表作为Zset 类型的底层数据结构；
+如果有序集合的元素不满足上面的条件，Redis 会使用跳表作为 Zset 类型的底层数据结构；
+在 Redis 7.0 中，压缩列表数据结构已经废弃了，交由 listpack 数据结构来实现了。
+
+### redis线程模型
+Redis 单线程指的是「接收客户端请求->解析请求 ->进行数据读写等操作->发送数据给客户端」这个过程是由一个线程（主线程）来完成的，这也是我们常说 Redis 是单线程的原因。
+
+但是，Redis 程序并不是单线程的，Redis 在启动的时候，是会启动后台线程（BIO）的：
+
+Redis 在 2.6 版本，会启动 2 个后台线程，分别处理关闭文件、AOF 刷盘这两个任务；
+Redis 在 4.0 版本之后，新增了一个新的后台线程，用来异步释放 Redis 内存，也就是 lazyfree 线程。例如执行 unlink key / flushdb async / flushall async 等命令，会把这些删除操作交给后台线程来执行，好处是不会导致 Redis 主线程卡顿。因此，当我们要删除一个大 key 的时候，不要使用 del 命令删除，因为 del 是在主线程处理的，这样会导致 Redis 主线程卡顿，因此我们应该使用 unlink 命令来异步删除大key。
+之所以 Redis 为「关闭文件、AOF 刷盘、释放内存」这些任务创建单独的线程来处理，是因为这些任务的操作都是很耗时的，如果把这些任务都放在主线程来处理，那么 Redis 主线程就很容易发生阻塞，这样就无法处理后续的请求了。
+
+后台线程相当于一个消费者，生产者把耗时任务丢到任务队列中，消费者（BIO）不停轮询这个队列，拿出任务就去执行对应的方法即可。
